@@ -4,7 +4,7 @@
 
 ## GitHub Pages
 
-เว็บไซต์: https://theera-droid.github.io/chiangdao-prototype/
+เว็บไซต์: https://theera-droid.github.io/chaingdaoCheck/
 
 Workflow `.github/workflows/pages.yml` ทดสอบ อ่านยอดจริง และ deploy เมื่อ push main, กด Run workflow หรือถึงรอบประมาณทุก 5 นาที (GitHub อาจเริ่มช้า จึงไม่ใช่ real time) scheduled run หลัง 13 ก.พ. 2570 จะข้ามงานอ่านข้อมูลและ deploy
 
