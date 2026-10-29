@@ -31,7 +31,7 @@ test('three consecutive failures pause reads; recovery replaces unknown with act
   const result=await read('2026-11-16');assert.equal(result.day.available,7);assert.equal(result.stale,false);
 });
 test('SSE sends snapshots and new counts without a browser polling interval', async () => {
-  const app=createApp({snapshotPath:null,fetchImpl:async url=>Response.json(url.includes('/chiangdao/open')?{data:{q:{open:true}}}:{success:true,data:{date:new URL(url).searchParams.get('date'),available:8,capacity:100}})});
+  const app=createApp({snapshotPath:null,snapshotPause:async()=>{},fetchImpl:async url=>Response.json(url.includes('/chiangdao/open')?{data:{q:{open:true}}}:{success:true,data:{date:new URL(url).searchParams.get('date'),available:8,capacity:100}})});
   const server=app.listen(0,'127.0.0.1');await once(server,'listening');
   const controller=new AbortController();let reader;
   const timeout=setTimeout(()=>controller.abort(),5000);

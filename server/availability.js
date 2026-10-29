@@ -8,7 +8,7 @@ export function isVisitDate(date) {
 }
 export function createAvailabilityReader({ fetchImpl = fetch, now = Date.now } = {}) {
   const cache = new Map(), failures = new Map(), pending = new Map();
-  let blockedUntil = 0, nextRequest = 0, openCache, openRetryAt = 0, failuresInRow = 0;
+  let blockedUntil = 0, openCache, openRetryAt = 0, failuresInRow = 0;
   async function get(url) {
     const response = await fetchImpl(url, { signal: AbortSignal.timeout(8000), redirect: 'error', headers: { Accept: 'application/json' } });
     if (!response.ok) {
@@ -28,8 +28,7 @@ export function createAvailabilityReader({ fetchImpl = fetch, now = Date.now } =
     const failure = failures.get(date);
     if (failure && now() - failure.at < 60000) return failure.result;
     if (now() < blockedUntil) throw Object.assign(new Error('ต้นทางจำกัดการเข้าถึง กำลังพักการเรียกข้อมูล'), { status: 503 });
-    if (pending.size || now() < nextRequest) throw Object.assign(new Error('กรุณารอสักครู่ก่อนตรวจวันถัดไป'), { status: 429 });
-    nextRequest = now() + 1200;
+    if (pending.size >= 3) throw Object.assign(new Error('กำลังอ่านครบ 3 วันพร้อมกัน กรุณารอสักครู่'), { status: 429 });
     const task = (async () => {
       let bookingOpen = openCache && now() - openCache.at < 60000 ? openCache.value : null;
       try {

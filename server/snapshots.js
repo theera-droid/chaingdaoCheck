@@ -53,32 +53,32 @@ export function createSnapshots({ read, path = null, now = Date.now, pause = ms 
       if (now() < globalRetryAt) break;
       s.running = true; s.error = ''; emit(month);
       try {
-        for (const date of visitDates(month)) {
-          if (closed || fresh(date)) continue;
-          const started = now();
-          try {
-            const row = await read(date);
-            if (closed) break;
-            // Preserve a persisted last good value if the fresh process cannot read this day.
-            records[date] = row.error && !row.day.observedAt && records[date]?.day.observedAt
-              ? { ...records[date], stale: true, error: row.error } : row;
-            if (row.error) s.error = row.error;
-            emit(month);
-            await persist();
-            if (row.blocked) {
-              globalRetryAt = Date.parse(row.retryAt) || now() + 300000;
-              queue.length = 0;
-              for (const [key, value] of Object.entries(records)) records[key] = { ...value, stale: true };
-              for (const subscribed of listeners.keys()) emit(subscribed);
-              break;
+        const staged = {}, dates = visitDates(month).filter(date => !fresh(date));
+        for (let index = 0; index < dates.length && !closed; index += 3) {
+          const started = now(), batch = dates.slice(index,index+3);
+          const outcomes = await Promise.allSettled(batch.map(date => read(date)));
+          if (closed) break;
+          let blocked = false;
+          for (let i=0;i<batch.length;i++) {
+            const date=batch[i], outcome=outcomes[i];
+            if (outcome.status === 'fulfilled') {
+              const row=outcome.value;
+              staged[date] = row.error && !row.day.observedAt && records[date]?.day.observedAt
+                ? {...records[date],stale:true,error:row.error} : row;
+              if(row.error) s.error=row.error;
+              if(row.blocked) { blocked=true;globalRetryAt=Math.max(globalRetryAt,Date.parse(row.retryAt)||now()+300000); }
+            } else {
+              s.error=outcome.reason.message;
+              staged[date]=records[date] ? {...records[date],stale:true,error:s.error} : {source:'live',stale:true,error:s.error,day:{date,available:null,capacity:null,status:'unknown',observedAt:null}};
+              if(outcome.reason.status===503) {blocked=true;globalRetryAt=Math.max(globalRetryAt,now()+TTL);}
             }
-          } catch (error) {
-            s.error = error.message;
-            if (records[date]) records[date] = { ...records[date], stale: true, error: error.message };
-            emit(month);
-            if (error.status === 503) { globalRetryAt = now() + TTL; queue.length = 0; break; }
           }
-          if (!closed) await pause(Math.max(0, 1250 - (now() - started)));
+          if(blocked) { queue.length=0;break; }
+          if(index+3<dates.length && !closed) await pause(Math.max(0,1250-(now()-started)));
+        }
+        if (!closed) {
+          Object.assign(records,staged);
+          if(now()<globalRetryAt) for(const [date,row] of Object.entries(records)) records[date]={...row,stale:true};
         }
         await persist();
       } finally {

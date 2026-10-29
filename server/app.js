@@ -5,7 +5,7 @@ import { createSnapshots, MONTHS } from './snapshots.js';
 export function createApp(options = {}) {
   const app = express();
   const read = createAvailabilityReader(options);
-  const snapshots = createSnapshots({ read, path: options.snapshotPath === undefined ? fileURLToPath(new URL('../.cache/availability.json', import.meta.url)) : options.snapshotPath });
+  const snapshots = createSnapshots({ read, pause: options.snapshotPause, path: options.snapshotPath === undefined ? fileURLToPath(new URL('../.cache/availability.json', import.meta.url)) : options.snapshotPath });
   const streams = new Set();
   app.locals.close = () => { for (const res of streams) res.end(); snapshots.close(); };
   app.locals.warm = () => snapshots.warm(MONTHS[0]);
