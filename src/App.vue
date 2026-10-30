@@ -1,9 +1,6 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { restore, save } from './saved-data.js';
-import Omkoi from './Omkoi.vue';
-const location=ref(window.location.hash==='#omkoi'?'omkoi':'chiangdao');
-watch(location, value=>history.replaceState(null,'',value==='omkoi'?'#omkoi':'#chiangdao'));
 let localStore;
 try { localStore = window.localStorage; } catch {}
 const page = ref(0), selected = ref('2026-11-16'), filter = ref('all');
@@ -86,10 +83,8 @@ onUnmounted(() => { disposed = true; requestId++; clearInterval(tick); clearTime
 </script>
 
 <template>
-  <header><div class="brand"><span aria-hidden="true">△</span> {{location==='omkoi'?'OMKOI':'CHIANG DAO'}}</div><span class="badge">{{ pagesMode ? 'ข้อมูลจากต้นทาง · อัปเดตเป็นรอบ' : 'CONCEPT / ต้นแบบส่วนตัว' }}</span></header>
-  <nav class="location-tabs" aria-label="เลือกพื้นที่"><button :class="{chosen:location==='chiangdao'}" :aria-pressed="location==='chiangdao'" @click="location='chiangdao'">เชียงดาว</button><button :class="{chosen:location==='omkoi'}" :aria-pressed="location==='omkoi'" @click="location='omkoi'">อมก๋อย</button></nav>
-  <Omkoi v-if="location==='omkoi'" />
-  <main v-else>
+  <header><div class="brand"><span aria-hidden="true">△</span> CHIANG DAO</div><span class="badge">{{ pagesMode ? 'ข้อมูลจากต้นทาง · อัปเดตเป็นรอบ' : 'CONCEPT / ต้นแบบส่วนตัว' }}</span></header>
+  <main>
     <section class="hero">
       <div class="hero-copy"><div class="eyebrow">A LITTLE CLOSER TO NATURE</div><h1>หาวันว่าง แล้วไปเชียงดาว</h1><p>ดูวันเดินป่าและจำนวนที่ว่างในปฏิทินเดียว<br>เผื่อวันดี ๆ ให้ตัวเองได้ออกไปเจอธรรมชาติ</p></div>
       <svg class="mountains" viewBox="0 0 600 280" preserveAspectRatio="xMaxYMax slice" aria-hidden="true"><circle cx="470" cy="65" r="33" fill="#f7f3d9"/><path d="M0 280L170 95 230 150 330 35 440 168 500 110 600 240V280Z" fill="#b0c2ae"/><path d="M70 280L250 155 300 189 380 93 510 223 560 176 650 280Z" fill="#819b83"/><path d="M100 280L280 224 350 244 450 183 600 249V280Z" fill="#526e58"/></svg>
@@ -118,7 +113,6 @@ onUnmounted(() => { disposed = true; requestId++; clearInterval(tick); clearTime
 </template>
 
 <style scoped>
-.location-tabs{max-width:1200px;margin:0 auto;padding:0 32px 20px;display:flex;gap:10px}.location-tabs button{border:1px solid #d4dece;background:white;color:#203c33;border-radius:30px;padding:8px 24px}.location-tabs .chosen{background:#203c33;color:white}
 .day .observed { margin-top: 1px; font-size: 9px; line-height: 1.2; opacity: .8; }
 .day.unknown { background: #f8f8f6; color: #738078; border-color: #e1e6dc; }
 .day.stale { background: #f8f4ea; color: #84775e; border-style: dashed; }
