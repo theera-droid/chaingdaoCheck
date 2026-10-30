@@ -2,14 +2,22 @@ import express from 'express';
 import { fileURLToPath } from 'node:url';
 import { createAvailabilityReader, isVisitDate } from './availability.js';
 import { createSnapshots, MONTHS } from './snapshots.js';
+import { updateOmkoi } from './omkoi.js';
 export function createApp(options = {}) {
   const app = express();
+  let omkoi={site:'omkoi',state:'checking',records:[],message:'กำลังตรวจสถานะต้นทาง',expectedOpening:'2026-11-03'}, omkoiPending=null, omkoiNext=0;
   const read = createAvailabilityReader(options);
   const snapshots = createSnapshots({ read, pause: options.snapshotPause, path: options.snapshotPath === undefined ? fileURLToPath(new URL('../.cache/availability.json', import.meta.url)) : options.snapshotPath });
   const streams = new Set();
   app.locals.close = () => { for (const res of streams) res.end(); snapshots.close(); };
   app.locals.warm = () => snapshots.warm(MONTHS[0]);
   app.use('/api', (_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
+  app.get('/api/omkoi', (_req,res) => {
+    if(!omkoiPending && Date.now()>=omkoiNext) {
+      omkoiPending=updateOmkoi({previous:omkoi,fetchImpl:options.fetchImpl??fetch}).then(value=>{omkoi=value;}).finally(()=>{omkoiPending=null;omkoiNext=Date.now()+60000;});
+    }
+    res.json(omkoi);
+  });
   app.get('/api/availability/month', async (req, res) => {
     if (!MONTHS.includes(req.query.month)) return res.status(400).json({ error: 'เดือนอยู่นอกช่วงเปิดเส้นทาง' });
     res.json(await snapshots.get(req.query.month));

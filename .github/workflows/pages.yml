@@ -21,43 +21,26 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - name: Check season for scheduled runs
-        id: season
-        shell: bash
-        run: |
-          if [[ '${{ github.event_name }}' == 'schedule' && "$(date -u +%Y%m%d)" > '20270213' ]]; then
-            echo 'active=false' >> "$GITHUB_OUTPUT"
-          else
-            echo 'active=true' >> "$GITHUB_OUTPUT"
-          fi
       - uses: actions/configure-pages@v5
-        if: steps.season.outputs.active == 'true'
         id: pages
       - uses: actions/setup-node@v4
-        if: steps.season.outputs.active == 'true'
         with:
           node-version: '24'
           cache: npm
           cache-dependency-path: package-lock.json
       - run: npm ci
-        if: steps.season.outputs.active == 'true'
       - run: npm test
-        if: steps.season.outputs.active == 'true'
       - name: Prepare availability data
-        if: steps.season.outputs.active == 'true'
         run: node scripts/export-pages.js
         env:
           PAGES_PREVIOUS_URL: ${{ steps.pages.outputs.base_url }}/data/availability.json
       - name: Build Vue for the configured Pages URL
-        if: steps.season.outputs.active == 'true'
         run: npm run build
         env:
           VITE_PAGES: 'true'
           VITE_BASE_PATH: ${{ steps.pages.outputs.base_path }}/
       - uses: actions/upload-pages-artifact@v3
-        if: steps.season.outputs.active == 'true'
         with:
           path: dist
       - uses: actions/deploy-pages@v4
-        if: steps.season.outputs.active == 'true'
         id: deployment
